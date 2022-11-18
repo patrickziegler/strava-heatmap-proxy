@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -8,34 +10,12 @@ import (
 	"net/http/cookiejar"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
-	"syscall"
-
-	"golang.org/x/term"
 )
 
-func getUser() string {
-	fmt.Print("Strava user: ")
-	var user string
-	_, err := fmt.Scanln(&user)
-	if err != nil {
-		fmt.Println("sackradding", err)
-	}
-	return user
-}
-
-func getPassword() string {
-	fmt.Print("Strava password: ")
-	bytepw, err := term.ReadPassword(int(syscall.Stdin))
-	fmt.Print("\n")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return string(bytepw)
-}
-
-func main() {
+func Doit(email string, password string, port string) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		// error handling
@@ -63,8 +43,8 @@ func main() {
 	params.Add("utf8", "\u2713")
 	params.Add("authenticity_token", authenticity_token)
 	params.Add("plan", "")
-	params.Add("email", getUser())
-	params.Add("password", getPassword())
+	params.Add("email", email)
+	params.Add("password", password)
 	params.Add("remember_me", "on")
 
 	resp2, err := client.PostForm("https://www.strava.com/session", params)
@@ -114,5 +94,44 @@ func main() {
 	})
 
 	log.Printf("Starting proxy")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+type Config struct {
+	Email    string
+	Password string
+}
+
+type Param struct {
+	Config *string
+	Port   *string
+}
+
+func main() {
+	param := &Param{
+		Config: flag.String("config", "config.json", "Path to configuration file"),
+		Port:   flag.String("port", "8080", "Local proxy port"),
+	}
+	flag.Parse()
+	configFile, _ := os.Open(*param.Config)
+	byt, err := io.ReadAll(configFile)
+	if err != nil {
+		fmt.Println("Failed to read config file: ", err)
+		os.Exit(1)
+	}
+	var config Config
+	err = json.Unmarshal(byt, &config)
+	if err != nil {
+		fmt.Println("Failed to parse config file: ", err)
+		os.Exit(1)
+	}
+	if config.Email == "" {
+		fmt.Println("Cannot find 'Email' in config")
+		os.Exit(1)
+	}
+	if config.Password == "" {
+		fmt.Println("Cannot find 'Password' in config")
+		os.Exit(1)
+	}
+	Doit(config.Email, config.Password, *param.Port)
 }
