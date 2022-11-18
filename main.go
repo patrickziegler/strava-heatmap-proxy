@@ -1,13 +1,12 @@
 package main
 
-// https://github.com/erik/strava-heatmap-proxy/blob/main/scripts/refresh_strava_credentials.ts
-
 import (
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"strings"
@@ -90,4 +89,30 @@ func main() {
 			fmt.Println(cookie.Name, ":\t", cookie.Value)
 		}
 	}
+
+	target, err := url.Parse("https://heatmap-external-a.strava.com/")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	director := func(req *http.Request) {
+		req.URL.Scheme = target.Scheme
+		req.URL.Host = target.Host
+		req.Host = target.Host
+		for _, c := range jar.Cookies(req.URL) {
+			req.AddCookie(c)
+		}
+	}
+
+	proxy := &httputil.ReverseProxy{
+		Director: director,
+	}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		proxy.ServeHTTP(w, r)
+		log.Printf("%s %s", r.Method, r.URL.Path)
+	})
+
+	log.Printf("Starting proxy")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
