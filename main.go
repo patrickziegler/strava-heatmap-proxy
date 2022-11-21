@@ -12,45 +12,23 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 )
 
-type StravaProxy struct {
-	httputil.ReverseProxy
-	Client *http.Client
+type StravaClient struct {
+	http.Client
 }
 
-func NewStravaProxy() *StravaProxy {
+func NewStravaClient() *StravaClient {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		// error handling
 	}
-
-	client := &http.Client{
-		Jar: jar,
-	}
-
-	target, err := url.Parse("https://heatmap-external-a.strava.com/")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.Host = target.Host
-		for _, c := range jar.Cookies(req.URL) {
-			req.AddCookie(c)
-		}
-	}
-
-	return &StravaProxy{
-		httputil.ReverseProxy{Director: director},
-		client,
-	}
+	return &StravaClient{http.Client{Jar: jar}}
 }
 
-func (proxy *StravaProxy) Authenticate(email string, password string) {
-	resp, err := proxy.Client.Get("https://www.strava.com/login")
+func (client *StravaClient) Authenticate(email string, password string) {
+	resp, err := client.Get("https://www.strava.com/login")
 	if err != nil {
 		print(err)
 	}
@@ -72,7 +50,7 @@ func (proxy *StravaProxy) Authenticate(email string, password string) {
 	params.Add("password", password)
 	params.Add("remember_me", "on")
 
-	resp, err = proxy.Client.PostForm("https://www.strava.com/session", params)
+	resp, err = client.PostForm("https://www.strava.com/session", params)
 	if err != nil {
 		fmt.Println("leck mi")
 		print(err)
@@ -80,12 +58,49 @@ func (proxy *StravaProxy) Authenticate(email string, password string) {
 		fmt.Println("sackrement")
 	}
 
-	resp, err = proxy.Client.Get("https://heatmap-external-a.strava.com/auth")
+	resp, err = client.Get("https://heatmap-external-a.strava.com/auth")
 	if err != nil {
 		fmt.Println("sackrement")
 		print(err)
 	} else if resp.StatusCode != http.StatusOK {
 		fmt.Println("zefix")
+	}
+}
+
+func (client *StravaClient) AddAuthenticationToken(req *http.Request) {
+	for _, c := range client.Jar.Cookies(req.URL) {
+		req.AddCookie(c)
+	}
+}
+
+func (client *StravaClient) PrintAuthenticationToken() {
+	urlObj, _ := url.Parse("https://www.strava.com")
+	for _, cookie := range client.Jar.Cookies(urlObj) {
+		if strings.HasPrefix(cookie.Name, "CloudFront") {
+			fmt.Println(cookie.Name, ":\t", cookie.Value)
+		}
+	}
+}
+
+type StravaProxy struct {
+	httputil.ReverseProxy
+	Client *StravaClient
+}
+
+func NewStravaProxy(client *StravaClient) *StravaProxy {
+	target, err := url.Parse("https://heatmap-external-a.strava.com/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	director := func(req *http.Request) {
+		req.URL.Scheme = target.Scheme
+		req.URL.Host = target.Host
+		req.Host = target.Host
+		client.AddAuthenticationToken(req)
+	}
+	return &StravaProxy{
+		httputil.ReverseProxy{Director: director},
+		client,
 	}
 }
 
@@ -126,8 +141,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	proxy := NewStravaProxy()
-	proxy.Authenticate(config.Email, config.Password)
+	client := NewStravaClient()
+	client.Authenticate(config.Email, config.Password)
+	client.PrintAuthenticationToken()
+
+	proxy := NewStravaProxy(client)
 
 	http.Handle("/", proxy)
 
