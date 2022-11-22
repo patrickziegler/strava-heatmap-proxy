@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,56 +16,64 @@ import (
 	"strings"
 )
 
+type ResponseError struct {
+	err  error
+	resp *http.Response
+}
+
+func (err *ResponseError) Error() string {
+	if err.resp.StatusCode != http.StatusOK {
+		return "Request " + err.resp.Request.URL.RawQuery + " returned: " + err.resp.Status
+	} else {
+		return "Request failed: " + err.err.Error()
+	}
+}
+
 type StravaClient struct {
 	http.Client
 }
 
 func NewStravaClient() *StravaClient {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		// error handling
-	}
+	jar, _ := cookiejar.New(nil)
 	return &StravaClient{http.Client{Jar: jar}}
 }
 
-func (client *StravaClient) Authenticate(email string, password string) {
-	resp, err := client.Get("https://www.strava.com/login")
-	if err != nil {
-		print(err)
-	}
-
-	defer resp.Body.Close()
+func extractAuthenticityToken(resp *http.Response) (string, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		print(err)
+		return "", fmt.Errorf("Failed to read body: %w", err)
 	}
-	text := string(body)
-	exp, err := regexp.Compile("name=\"authenticity_token\".*value=\"(.+?)\"")
-	authenticity_token := exp.FindStringSubmatch(text)[1]
+	expr, _ := regexp.Compile("name=\"authenticity_token\".*value=\"(.+?)\"")
+	matches := expr.FindStringSubmatch(string(body))
+	if len(matches) < 2 {
+		return "", errors.New("Token not found")
+	}
+	return matches[1], nil
+}
 
+func (client *StravaClient) Authenticate(email string, password string) error {
+	resp, err := client.Get("https://www.strava.com/login")
+	if err != nil {
+		return &ResponseError{err, resp}
+	}
+	token, err := extractAuthenticityToken(resp)
+	if err != nil {
+		return fmt.Errorf("Could not get authenticity token for login form: %w", err)
+	}
 	params := url.Values{}
 	params.Add("utf8", "\u2713")
-	params.Add("authenticity_token", authenticity_token)
+	params.Add("authenticity_token", token)
 	params.Add("plan", "")
 	params.Add("email", email)
 	params.Add("password", password)
 	params.Add("remember_me", "on")
-
-	resp, err = client.PostForm("https://www.strava.com/session", params)
-	if err != nil {
-		fmt.Println("leck mi")
-		print(err)
-	} else if resp.StatusCode != http.StatusOK {
-		fmt.Println("sackrement")
+	if resp, err := client.PostForm("https://www.strava.com/session", params); err != nil {
+		return &ResponseError{err, resp}
 	}
-
-	resp, err = client.Get("https://heatmap-external-a.strava.com/auth")
-	if err != nil {
-		fmt.Println("sackrement")
-		print(err)
-	} else if resp.StatusCode != http.StatusOK {
-		fmt.Println("zefix")
+	if resp, err := client.Get("https://heatmap-external-a.strava.com/auth"); err != nil {
+		return &ResponseError{err, resp}
 	}
+	return nil
 }
 
 func (client *StravaClient) AddAuthenticationToken(req *http.Request) {
@@ -74,24 +83,25 @@ func (client *StravaClient) AddAuthenticationToken(req *http.Request) {
 }
 
 func (client *StravaClient) PrintAuthenticationToken() {
-	urlObj, _ := url.Parse("https://www.strava.com")
-	for _, cookie := range client.Jar.Cookies(urlObj) {
+	target, _ := url.Parse("https://www.strava.com")
+	for _, cookie := range client.Jar.Cookies(target) {
 		if strings.HasPrefix(cookie.Name, "CloudFront") {
-			fmt.Println(cookie.Name, ":\t", cookie.Value)
+			fmt.Println(cookie.Name, "\t", cookie.Value)
 		}
 	}
 }
 
-type StravaProxy struct {
-	httputil.ReverseProxy
-	Client *StravaClient
+type AuthenticationClient interface {
+	AddAuthenticationToken(*http.Request)
 }
 
-func NewStravaProxy(client *StravaClient) *StravaProxy {
-	target, err := url.Parse("https://heatmap-external-a.strava.com/")
-	if err != nil {
-		log.Fatal(err)
-	}
+type StravaProxy struct {
+	httputil.ReverseProxy
+	Client AuthenticationClient
+}
+
+func NewStravaProxy(client AuthenticationClient) *StravaProxy {
+	target, _ := url.Parse("https://heatmap-external-a.strava.com/")
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
@@ -142,7 +152,10 @@ func main() {
 	}
 
 	client := NewStravaClient()
-	client.Authenticate(config.Email, config.Password)
+	err = client.Authenticate(config.Email, config.Password)
+	if err != nil {
+		panic("Failed to authenticate: " + err.Error())
+	}
 	client.PrintAuthenticationToken()
 
 	proxy := NewStravaProxy(client)
