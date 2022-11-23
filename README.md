@@ -18,7 +18,7 @@ Then you can run the proxy with
 strava-heatmap-proxy --config "<path-to-config>"
 ```
 
-whereby the config is expected to be a json formatted file holding Strava login credentials
+whereby the config is expected to be a json formatted file holding [Strava](https://www.strava.com/) login credentials
 
 ```json
 {
@@ -39,7 +39,7 @@ The following [TMS](https://wiki.openstreetmap.org/wiki/TMS) file can be used to
 </TMS>
 ```
 
-This [Screenshot](https://imgur.com/a/6ELYene) shows how it would look like in [QMapShack](https://github.com/Maproom/qmapshack/wiki)
+This [Screenshot](https://i.imgur.com/WVHWyjR.jpeg) shows how it would look like in [QMapShack](https://github.com/Maproom/qmapshack/wiki)
 
 ### Additional Note
 
@@ -57,7 +57,7 @@ It is also possible to put the `CloudFront-*` parameters directly into the TMS f
 ## References
 
 1. Discussion in https://github.com/bertt/wmts/issues/2 revealed the importance of `CloudFront-*` parameters
-1. https://github.com/erik/strava-heatmap-proxy is following a similar approach but is designed as a Cloudflare worker
+1. https://github.com/erik/strava-heatmap-proxy is following a similar approach but is designed to be a Cloudflare worker
 
 ## License
 
