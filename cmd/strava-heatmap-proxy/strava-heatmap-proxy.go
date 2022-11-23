@@ -22,43 +22,49 @@ type Param struct {
 	Port   *string
 }
 
+func ParseConfig(path string) (*Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("Could not open config file '%s': %w", path, err)
+	}
+	body, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("Could not read from config file '%s': %w", path, err)
+	}
+	var config Config
+	err = json.Unmarshal(body, &config)
+	if err != nil {
+		return nil, fmt.Errorf("Could not unmarshal json from config file '%s': %w", path, err)
+	}
+	if config.Email == "" {
+		return nil, fmt.Errorf("Mandatory field 'Email' not found in '%s'", path)
+	}
+	if config.Password == "" {
+		return nil, fmt.Errorf("Mandatory field 'Password' not found in '%s'", path)
+	}
+	return &config, nil
+}
+
 func main() {
 	param := &Param{
 		Config: flag.String("config", "config.json", "Path to configuration file"),
 		Port:   flag.String("port", "8080", "Local proxy port"),
 	}
 	flag.Parse()
-	configFile, _ := os.Open(*param.Config)
-	byt, err := io.ReadAll(configFile)
-	if err != nil {
-		fmt.Println("Failed to read config file: ", err)
-		os.Exit(1)
-	}
-	var config Config
-	err = json.Unmarshal(byt, &config)
-	if err != nil {
-		fmt.Println("Failed to parse config file: ", err)
-		os.Exit(1)
-	}
-	if config.Email == "" {
-		fmt.Println("Cannot find 'Email' in config")
-		os.Exit(1)
-	}
-	if config.Password == "" {
-		fmt.Println("Cannot find 'Password' in config")
-		os.Exit(1)
-	}
 
+	config, err := ParseConfig(*param.Config)
+	if err != nil {
+		log.Fatalf("Failed to get configuration: %s", err)
+	}
 	client := strava.NewStravaClient()
 
-	err = client.Authenticate(config.Email, config.Password)
-	if err != nil {
+	if err = client.Authenticate(config.Email, config.Password); err != nil {
 		log.Fatalf("Failed to authenticate client: %s", err)
 	}
-
 	for k, v := range client.GetCloudFrontCookies() {
 		fmt.Printf("%s\t%s\n", k, v)
 	}
+	log.Printf("Starting heatmap proxy on port %s ..", *param.Port)
 
 	http.Handle("/", strava.NewStravaProxy(client))
 	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))
