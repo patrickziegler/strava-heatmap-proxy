@@ -4,7 +4,7 @@
 
 ### :hammer: Build and Install
 
-With [git](https://git-scm.com/downloads) and [golang](https://go.dev/) avaiable on your system, the following three steps are sufficient to build and install this tool
+With [git](https://git-scm.com/downloads) and [golang](https://go.dev/) available on your system, the following three steps are sufficient to build and install this tool
 
 ```sh
 git clone https://github.com/patrickziegler/strava-heatmap-proxy
@@ -18,7 +18,7 @@ Then you can run the proxy with
 strava-heatmap-proxy --config "<path-to-config>"
 ```
 
-whereby the config is expected to be a json formatted file holding strava login credentials like
+whereby the config is expected to be a json formatted file holding Strava login credentials
 
 ```json
 {
@@ -39,6 +39,8 @@ The following [TMS](https://wiki.openstreetmap.org/wiki/TMS) file can be used to
 </TMS>
 ```
 
+This [Screenshot](https://imgur.com/a/6ELYene) shows how it would look like in [QMapShack](https://github.com/Maproom/qmapshack/wiki)
+
 ### Additional Note
 
 It is also possible to put the `CloudFront-*` parameters directly into the TMS file as shown below (`strava-heatmap-proxy` is printing them out on startup). In this case, it would not be necessary to keep the proxy running in the background, but you would need to update the file every once in a while as those parameters will expire after some time
@@ -51,6 +53,11 @@ It is also possible to put the `CloudFront-*` parameters directly into the TMS f
     </Layer>
 </TMS>
 ```
+
+## References
+
+1. Discussion in https://github.com/bertt/wmts/issues/2 revealed the importance of `CloudFront-*` parameters
+1. https://github.com/erik/strava-heatmap-proxy is following a similar approach but is designed as a Cloudflare worker
 
 ## License
 
