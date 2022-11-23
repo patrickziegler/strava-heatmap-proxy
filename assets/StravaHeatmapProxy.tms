@@ -1,5 +1,0 @@
-<TMS>
-    <Layer idx="0">
-        <ServerUrl>http://localhost:8080/tiles-auth/all/hot/%1/%2/%3.png</ServerUrl>
-    </Layer>
-</TMS>
