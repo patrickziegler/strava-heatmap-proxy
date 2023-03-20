@@ -1,23 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
+	"os"
+	"strings"
 
 	"github.com/patrickziegler/strava-heatmap-proxy/internal/strava"
 )
 
 type Param struct {
 	Config *string
-	Port   *string
 }
 
 func main() {
 	param := &Param{
 		Config: flag.String("config", "config.json", "Path to configuration file"),
-		Port:   flag.String("port", "8080", "Local proxy port"),
 	}
 	flag.Parse()
 
@@ -32,12 +32,14 @@ func main() {
 		log.Fatalf("Failed to authenticate client: %s", err)
 	}
 
-	for k, v := range client.GetCloudFrontCookies() {
-		fmt.Printf("%s\t%s\n", k, v)
+	cookies := client.GetCloudFrontCookies()
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.Replace(line, "%CloudFront-Key-Pair-Id%", cookies["CloudFront-Key-Pair-Id"], -1)
+		line = strings.Replace(line, "%CloudFront-Policy%", cookies["CloudFront-Policy"], -1)
+		line = strings.Replace(line, "%CloudFront-Signature%", cookies["CloudFront-Signature"], -1)
+		fmt.Println(line)
 	}
-
-	log.Printf("Starting heatmap proxy on port %s ..", *param.Port)
-
-	http.Handle("/", strava.NewStravaProxy(client))
-	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))
 }
