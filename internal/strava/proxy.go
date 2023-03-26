@@ -12,7 +12,6 @@ type CookieClient interface {
 
 type StravaProxy struct {
 	httputil.ReverseProxy
-	Client CookieClient
 }
 
 func NewStravaProxy(client CookieClient) *StravaProxy {
@@ -25,6 +24,5 @@ func NewStravaProxy(client CookieClient) *StravaProxy {
 	}
 	return &StravaProxy{
 		httputil.ReverseProxy{Director: director},
-		client,
 	}
 }
