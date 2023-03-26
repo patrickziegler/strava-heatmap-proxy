@@ -16,3 +16,4 @@
 
 # Project specific
 config.json
+build/
