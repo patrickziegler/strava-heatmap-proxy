@@ -15,6 +15,7 @@ import (
 type Param struct {
 	Config *string
 	Port   *string
+	Target *string
 }
 
 func getParam() *Param {
@@ -27,6 +28,7 @@ func getParam() *Param {
 	param := &Param{
 		Config: flag.String("config", configfile, "Path to configuration file"),
 		Port:   flag.String("port", "8080", "Local proxy port"),
+		Target: flag.String("target", "https://heatmap-external-a.strava.com/", "Heatmap provider URL"),
 	}
 	flag.Parse()
 	return param
@@ -38,7 +40,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get configuration: %s", err)
 	}
-	target, _ := url.Parse("https://heatmap-external-a.strava.com/")
+	target, err := url.Parse(*param.Target)
+	if err != nil {
+		log.Fatalf("Could not parse target url: %s", err)
+	}
 	client := strava.NewStravaClient(target)
 	if err = client.Authenticate(config.Email, config.Password); err != nil {
 		log.Fatalf("Failed to authenticate client: %s", err)

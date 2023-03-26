@@ -13,25 +13,36 @@ import (
 	"github.com/patrickziegler/strava-heatmap-proxy/internal/strava"
 )
 
-func getConfig() *strava.Config {
+type Param struct {
+	Config *string
+	Target *string
+}
+
+func getParam() *Param {
 	configfile, err := os.UserHomeDir()
 	if err != nil {
 		configfile = "config.json"
 	} else {
 		configfile = path.Join(configfile, ".config", "strava-heatmap-proxy", "config.json")
 	}
-	flag.StringVar(&configfile, "config", configfile, "Path to configuration file")
-	flag.Parse()
-	config, err := strava.ParseConfig(configfile)
-	if err != nil {
-		log.Fatalf("Failed to get configuration: %s", err)
+	param := &Param{
+		Config: flag.String("config", configfile, "Path to configuration file"),
+		Target: flag.String("target", "https://heatmap-external-a.strava.com/", "Heatmap provider URL"),
 	}
-	return config
+	flag.Parse()
+	return param
 }
 
 func main() {
-	config := getConfig()
-	target, _ := url.Parse("https://heatmap-external-a.strava.com/")
+	param := getParam()
+	config, err := strava.ParseConfig(*param.Config)
+	if err != nil {
+		log.Fatalf("Failed to get configuration: %s", err)
+	}
+	target, err := url.Parse(*param.Target)
+	if err != nil {
+		log.Fatalf("Could not parse target url: %s", err)
+	}
 	client := strava.NewStravaClient(target)
 	if err := client.Authenticate(config.Email, config.Password); err != nil {
 		log.Fatalf("Failed to authenticate client: %s", err)
