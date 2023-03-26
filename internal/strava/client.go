@@ -14,14 +14,15 @@ import (
 
 type StravaClient struct {
 	http.Client
+	target *url.URL
 }
 
-func NewStravaClient() *StravaClient {
+func NewStravaClient(target *url.URL) *StravaClient {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		log.Fatalf("Failed to create cookie jar: %s", err)
 	}
-	return &StravaClient{http.Client{Jar: jar}}
+	return &StravaClient{http.Client{Jar: jar}, target}
 }
 
 func (client *StravaClient) send(req *http.Request, err error) (*http.Response, error) {
@@ -56,10 +57,6 @@ func newStravaSessionRequest(email string, password string, token string) (*http
 	return req, err
 }
 
-func newStravaAuthRequest() (*http.Request, error) {
-	return http.NewRequest("GET", "https://heatmap-external-a.strava.com/auth", nil)
-}
-
 func extractAuthenticityToken(resp *http.Response) (string, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -85,7 +82,8 @@ func (client *StravaClient) Authenticate(email string, password string) error {
 	if _, err = client.send(newStravaSessionRequest(email, password, token)); err != nil {
 		return fmt.Errorf("Could not send session request: %w", err)
 	}
-	if _, err = client.send(newStravaAuthRequest()); err != nil {
+	auth, _ := url.JoinPath(client.target.String(), "auth")
+	if _, err := client.send(http.NewRequest("GET", auth, nil)); err != nil {
 		return fmt.Errorf("Could not send auth request: %w", err)
 	}
 	return nil
@@ -106,4 +104,8 @@ func (client *StravaClient) AddCookies(req *http.Request) {
 	for _, c := range client.Jar.Cookies(req.URL) {
 		req.AddCookie(c)
 	}
+}
+
+func (client *StravaClient) GetTarget() *url.URL {
+	return client.target
 }

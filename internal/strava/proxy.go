@@ -8,6 +8,7 @@ import (
 
 type CookieClient interface {
 	AddCookies(*http.Request)
+	GetTarget() *url.URL
 }
 
 type StravaProxy struct {
@@ -15,7 +16,7 @@ type StravaProxy struct {
 }
 
 func NewStravaProxy(client CookieClient) *StravaProxy {
-	target, _ := url.Parse("https://heatmap-external-a.strava.com/")
+	target := client.GetTarget()
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host

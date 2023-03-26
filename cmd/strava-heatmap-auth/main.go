@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -30,7 +31,8 @@ func getConfig() *strava.Config {
 
 func main() {
 	config := getConfig()
-	client := strava.NewStravaClient()
+	target, _ := url.Parse("https://heatmap-external-a.strava.com/")
+	client := strava.NewStravaClient(target)
 	if err := client.Authenticate(config.Email, config.Password); err != nil {
 		log.Fatalf("Failed to authenticate client: %s", err)
 	}
