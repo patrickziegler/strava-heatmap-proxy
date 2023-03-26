@@ -1,3 +1,3 @@
 module github.com/patrickziegler/strava-heatmap-proxy
 
-go 1.18
+go 1.19
