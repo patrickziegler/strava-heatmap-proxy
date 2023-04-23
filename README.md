@@ -51,7 +51,7 @@ And create the actual file with all `%CloudFront-*%` tokens replaced by their co
 cat StravaHeatmapAuth.tms.in | strava-heatmap-auth --config <path> | tee StravaHeatmapAuth.tms
 ```
 
-Be aware that those parameters may expire after some time.
+Be aware that those parameters may expire after some time (about a week) and you will need to manually re-create the file with the command above.
 
 ## Using the authentication proxy
 
