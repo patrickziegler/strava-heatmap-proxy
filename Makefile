@@ -1,16 +1,15 @@
-INSTALL_PREFIX ?= $(shell pwd)/build
+INSTALL_PREFIX ?= $(HOME)/.local
 
 BIN := \
 	strava-heatmap-auth \
 	strava-heatmap-proxy
 
-.PHONY: all
-all: $(BIN)
+.PHONY: install
+install: $(BIN)
 
 .PHONY: clean
 clean:
-	rm -f $(addprefix $(INSTALL_PREFIX)/, $(BIN))
-	rm -d $(INSTALL_PREFIX)
+	rm -f $(addprefix $(INSTALL_PREFIX)/bin/, $(BIN))
 
 %:
-	go build -o $(INSTALL_PREFIX)/$@ cmd/$@/main.go
+	GOPATH=$(INSTALL_PREFIX) go install cmd/$@/$@.go
