@@ -33,7 +33,7 @@ func (client *StravaClient) send(req *http.Request, err error) (*http.Response, 
 	if err != nil {
 		return nil, err
 	} else if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Request '%s' failed with status code %s", req.URL, resp.Status)
+		return nil, fmt.Errorf("request '%s' failed with status code %s", req.URL, resp.Status)
 	}
 	return resp, nil
 }
@@ -60,12 +60,12 @@ func newStravaSessionRequest(email string, password string, token string) (*http
 func extractAuthenticityToken(resp *http.Response) (string, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read body: %w", err)
+		return "", fmt.Errorf("failed to read body: %w", err)
 	}
 	expr, _ := regexp.Compile("name=\"authenticity_token\".*value=\"(.+?)\"")
 	matches := expr.FindStringSubmatch(string(body))
 	if len(matches) < 2 {
-		return "", errors.New("Token not found")
+		return "", errors.New("token not found")
 	}
 	return matches[1], nil
 }
@@ -73,18 +73,18 @@ func extractAuthenticityToken(resp *http.Response) (string, error) {
 func (client *StravaClient) Authenticate(email string, password string) error {
 	res, err := client.send(newStravaLoginRequest())
 	if err != nil {
-		return fmt.Errorf("Could not send login request: %w", err)
+		return fmt.Errorf("could not send login request: %w", err)
 	}
 	token, err := extractAuthenticityToken(res)
 	if err != nil {
-		return fmt.Errorf("Could not get authenticity token for login form: %w", err)
+		return fmt.Errorf("could not get authenticity token for login form: %w", err)
 	}
 	if _, err = client.send(newStravaSessionRequest(email, password, token)); err != nil {
-		return fmt.Errorf("Could not send session request: %w", err)
+		return fmt.Errorf("could not send session request: %w", err)
 	}
 	auth, _ := url.JoinPath(client.target.String(), "auth")
 	if _, err := client.send(http.NewRequest("GET", auth, nil)); err != nil {
-		return fmt.Errorf("Could not send auth request: %w", err)
+		return fmt.Errorf("could not send auth request: %w", err)
 	}
 	return nil
 }
