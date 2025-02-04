@@ -1,4 +1,4 @@
-package strava
+package proxy
 
 import (
 	"net/http"
@@ -7,23 +7,19 @@ import (
 )
 
 type CookieClient interface {
-	AddCookies(*http.Request)
+	GetCookies(url *url.URL) []*http.Cookie
 	GetTarget() *url.URL
 }
 
-type StravaProxy struct {
-	httputil.ReverseProxy
-}
-
-func NewStravaProxy(client CookieClient) *StravaProxy {
+func NewReverseProxy(client CookieClient) *httputil.ReverseProxy {
 	target := client.GetTarget()
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.Host = target.Host
-		client.AddCookies(req)
+		for _, c := range client.GetCookies(req.URL) {
+			req.AddCookie(c)
+		}
 	}
-	return &StravaProxy{
-		httputil.ReverseProxy{Director: director},
-	}
+	return &httputil.ReverseProxy{Director: director}
 }

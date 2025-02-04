@@ -1,4 +1,4 @@
-package strava
+package clients
 
 import (
 	"errors"
@@ -89,7 +89,7 @@ func (client *StravaClient) Authenticate(email string, password string) error {
 	return nil
 }
 
-func (client *StravaClient) GetCloudFrontCookies() map[string]string {
+func (client *StravaClient) GetCloudFrontTokens() map[string]string {
 	cookies := map[string]string{}
 	target, _ := url.Parse("https://www.strava.com")
 	for _, cookie := range client.Jar.Cookies(target) {
@@ -100,10 +100,8 @@ func (client *StravaClient) GetCloudFrontCookies() map[string]string {
 	return cookies
 }
 
-func (client *StravaClient) AddCookies(req *http.Request) {
-	for _, c := range client.Jar.Cookies(req.URL) {
-		req.AddCookie(c)
-	}
+func (client *StravaClient) GetCookies(url *url.URL) []*http.Cookie {
+	return client.Jar.Cookies(url)
 }
 
 func (client *StravaClient) GetTarget() *url.URL {
