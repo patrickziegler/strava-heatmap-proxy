@@ -13,6 +13,7 @@ import (
 )
 
 type Param struct {
+	Client *string
 	Config *string
 	Target *string
 }
@@ -25,26 +26,49 @@ func getParam() *Param {
 		configfile = path.Join(configfile, ".config", "strava-heatmap-proxy", "config.json")
 	}
 	param := &Param{
-		Config: flag.String("config", configfile, "Path to configuration file"),
+		Client: flag.String("client", "strava", "Client to be used for getting CloudFront tokens, should be one of: strava, firefox"),
+		Config: flag.String("config", configfile, "Path to the config file"),
 		Target: flag.String("target", "https://heatmap-external-a.strava.com/", "Heatmap provider URL"),
 	}
 	flag.Parse()
 	return param
 }
 
-func main() {
-	param := getParam()
-	cfg, err := config.ParseConfig(*param.Config)
+func getFirefoxClient(target *url.URL) *clients.FirefoxClient {
+	client, err := clients.NewFirefoxClient(target)
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
+	if client == nil {
+		log.Fatal("Could not find CloudFront tokens in Firefox cookies")
+	}
+	return client
+}
+
+func getStravaClient(target *url.URL, configPath string) *clients.StravaClient {
+	cfg, err := config.ParseConfig(configPath)
 	if err != nil {
 		log.Fatalf("Failed to get configuration: %s", err)
 	}
+	client := clients.NewStravaClient(target)
+	if err := client.Authenticate(cfg.Email, cfg.Password); err != nil {
+		log.Fatalf("Failed to authenticate client: %s", err)
+	}
+	return client
+}
+
+func main() {
+	var client pipe.CookieClient
+	param := getParam()
 	target, err := url.Parse(*param.Target)
 	if err != nil {
 		log.Fatalf("Could not parse target url: %s", err)
 	}
-	strava := clients.NewStravaClient(target)
-	if err := strava.Authenticate(cfg.Email, cfg.Password); err != nil {
-		log.Fatalf("Failed to authenticate client: %s", err)
+	switch *param.Client {
+	case "firefox":
+		client = getFirefoxClient(target)
+	default:
+		client = getStravaClient(target, *param.Config)
 	}
-	pipe.ReplaceCloudFrontTokens(strava)
+	pipe.ReplaceCloudFrontTokens(client)
 }
