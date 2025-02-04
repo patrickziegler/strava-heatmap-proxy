@@ -1,8 +1,8 @@
 # strava-heatmap-proxy
 
-This software allows streaming high resolution [Strava Global Heatmap](https://www.strava.com/heatmap) tiles with clients like [QGIS](https://qgis.org/de/site/), [QMapShack](https://github.com/Maproom/qmapshack/wiki), [JOSM](https://josm.openstreetmap.de/) and many others without requiring them to be able to handle the Strava specific authentication and session management.
+This software allows streaming high resolution [Strava Global Heatmap](https://www.strava.com/maps/global-heatmap) tiles with clients like [QGIS](https://qgis.org/de/site/), [QMapShack](https://github.com/Maproom/qmapshack/wiki), [JOSM](https://josm.openstreetmap.de/) and many others without requiring them to be able to handle the Strava specific authentication and session management.
 
-You can use the software either as [static file configurator](#using-the-static-file-configurator) or as [proxy server](#using-the-authentication-proxy) that handles the authentication on the fly.
+You can use the software either as [static file configurator](#using-the-static-file-configurator) or as [proxy server](#using-the-reverse-proxy) that handles the authentication on the fly.
 
 ## Getting started
 
@@ -27,6 +27,14 @@ The option `--config <path>` can be used to specify a custom location.
   "Password": "..."
 }
 ```
+
+### :broken_heart: Direct login broken
+
+Please note that the direct login method to Strava does not work anymore (as described in https://github.com/patrickziegler/strava-heatmap-proxy/issues/3).
+Running the tools without any further parameters will give you `failed with status code 403 Forbidden`.
+
+As a workaround, I have implemented the option `--client firefox` (available with both tools described below) to read the newest CloudFront tokens from your Firefox cookie database instead.
+For this to work, you'll need to login to Strava and open the [Global Heatmap](https://www.strava.com/maps/global-heatmap) once before running the commands below.
 
 ## Using the static file configurator
 
@@ -53,7 +61,7 @@ cat StravaHeatmapAuth.tms.in | strava-heatmap-auth --config <path> | tee StravaH
 
 Be aware that those parameters may expire after some time (about a week) and you will need to manually re-create the file with the command above.
 
-## Using the authentication proxy
+## Using the reverse proxy
 
 The tool `strava-heatmap-proxy` will set up a local proxy server for `https://heatmap-external-a.strava.com/`.
 Every request to `http://localhost:8080/` (or a different port that you can configure via `--port`) will then be extended with session cookies before being forwarded to Strava.
