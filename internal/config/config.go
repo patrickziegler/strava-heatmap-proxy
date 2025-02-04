@@ -1,4 +1,4 @@
-package strava
+package config
 
 import (
 	"encoding/json"

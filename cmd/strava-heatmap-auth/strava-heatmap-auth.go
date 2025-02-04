@@ -1,16 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"path"
-	"strings"
 
-	"github.com/patrickziegler/strava-heatmap-proxy/internal/strava"
+	"github.com/patrickziegler/strava-heatmap-proxy/internal/clients"
+	"github.com/patrickziegler/strava-heatmap-proxy/internal/config"
+	"github.com/patrickziegler/strava-heatmap-proxy/internal/pipe"
 )
 
 type Param struct {
@@ -35,7 +34,7 @@ func getParam() *Param {
 
 func main() {
 	param := getParam()
-	config, err := strava.ParseConfig(*param.Config)
+	cfg, err := config.ParseConfig(*param.Config)
 	if err != nil {
 		log.Fatalf("Failed to get configuration: %s", err)
 	}
@@ -43,17 +42,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not parse target url: %s", err)
 	}
-	client := strava.NewStravaClient(target)
-	if err := client.Authenticate(config.Email, config.Password); err != nil {
+	strava := clients.NewStravaClient(target)
+	if err := strava.Authenticate(cfg.Email, cfg.Password); err != nil {
 		log.Fatalf("Failed to authenticate client: %s", err)
 	}
-	cookies := client.GetCloudFrontCookies()
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.Replace(line, "%CloudFront-Key-Pair-Id%", cookies["CloudFront-Key-Pair-Id"], -1)
-		line = strings.Replace(line, "%CloudFront-Policy%", cookies["CloudFront-Policy"], -1)
-		line = strings.Replace(line, "%CloudFront-Signature%", cookies["CloudFront-Signature"], -1)
-		fmt.Println(line)
-	}
+	pipe.ReplaceCloudFrontTokens(strava)
 }

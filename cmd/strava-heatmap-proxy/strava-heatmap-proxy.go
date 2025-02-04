@@ -9,7 +9,9 @@ import (
 	"os"
 	"path"
 
-	"github.com/patrickziegler/strava-heatmap-proxy/internal/strava"
+	"github.com/patrickziegler/strava-heatmap-proxy/internal/clients"
+	"github.com/patrickziegler/strava-heatmap-proxy/internal/config"
+	"github.com/patrickziegler/strava-heatmap-proxy/internal/proxy"
 )
 
 type Param struct {
@@ -36,7 +38,7 @@ func getParam() *Param {
 
 func main() {
 	param := getParam()
-	config, err := strava.ParseConfig(*param.Config)
+	cfg, err := config.ParseConfig(*param.Config)
 	if err != nil {
 		log.Fatalf("Failed to get configuration: %s", err)
 	}
@@ -44,14 +46,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not parse target url: %s", err)
 	}
-	client := strava.NewStravaClient(target)
-	if err = client.Authenticate(config.Email, config.Password); err != nil {
+	strava := clients.NewStravaClient(target)
+	if err = strava.Authenticate(cfg.Email, cfg.Password); err != nil {
 		log.Fatalf("Failed to authenticate client: %s", err)
 	}
-	for k, v := range client.GetCloudFrontCookies() {
+	for k, v := range strava.GetCloudFrontTokens() {
 		fmt.Printf("%s\t%s\n", k, v)
 	}
 	log.Printf("Starting strava heatmap proxy on port %s ..", *param.Port)
-	http.Handle("/", strava.NewStravaProxy(client))
+	http.Handle("/", proxy.NewReverseProxy(strava))
 	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))
 }
