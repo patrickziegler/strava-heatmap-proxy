@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Strava Cookie Exporter",
+  "version": "1.0",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://*.strava.com/*"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon.png"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{28a6f8f7-6f20-4348-96f0-8abea3996195}"
+    }
+  }
+}
