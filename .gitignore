@@ -19,3 +19,5 @@ config.json
 build/
 
 TODO
+strava-cookie-exporter.zip
+strava-heatmap-proxy
