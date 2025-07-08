@@ -1,15 +1,26 @@
-INSTALL_PREFIX ?= $(HOME)/.local
+SERVICE_NAME := strava-heatmap-proxy
+EXTENSION_NAME := strava-cookie-exporter
+INSTALL_PREFIX := $(HOME)/.local
 
-BIN := \
-	strava-heatmap-auth \
-	strava-heatmap-proxy
+OUTPUT := \
+	$(SERVICE_NAME) \
+	$(EXTENSION_NAME).zip
 
-.PHONY: install
-install: $(BIN)
+.PHONY: all clean
 
-.PHONY: clean
+all: $(OUTPUT)
+
+$(SERVICE_NAME):
+	go build $@.go
+
+$(EXTENSION_NAME).zip:
+	7z a $@ ./$(EXTENSION_NAME)/*
+
 clean:
-	rm -f $(addprefix $(INSTALL_PREFIX)/bin/, $(BIN))
+	rm -f $(OUTPUT)
 
-%:
-	GOPATH=$(INSTALL_PREFIX) go install cmd/$@/$@.go
+install:
+	GOPATH=$(INSTALL_PREFIX) go install $(SERVICE_NAME).go
+
+uninstall:
+	rm -f $(addprefix $(INSTALL_PREFIX)/bin/, $(SERVICE_NAME))
