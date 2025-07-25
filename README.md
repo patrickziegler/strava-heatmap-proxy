@@ -3,8 +3,11 @@
 This software allows streaming high resolution [Strava Global Heatmap](https://www.strava.com/maps/global-heatmap) tiles with clients like [QGIS](https://qgis.org/de/site/), [QMapShack](https://github.com/Maproom/qmapshack/wiki), [JOSM](https://josm.openstreetmap.de/) and many others without requiring them to be able to handle the Strava specific authentication and session management.
 
 To do so, you need:
-1. The [strava-cookie-exporter](strava-cookie-exporter.xpi) browser extension to export the necessary cookies as json file
-1. The [strava-heatmap-proxy](#using-the-proxy-server) server which adds the necessary cookies to your requests before redirecting them to Strava
+1. The [strava-cookie-exporter](#jigsaw-using-the-browser-extension) browser extension to export the necessary cookies as json file
+1. The [strava-heatmap-proxy](#arrows_counterclockwise-using-the-proxy-server) server which adds the necessary cookies to your requests before redirecting them to Strava
+
+Note: [Previous versions](https://github.com/patrickziegler/strava-heatmap-proxy/tree/v1) allowed to login and extract the necessary cookies automatically when running the proxy server.
+Due to recent changes on Strava side this is not possible anymore and we need to extract the cookies via the browser extension.
 
 ## Getting started
 
@@ -20,15 +23,13 @@ INSTALL_PREFIX=~/.local/bin make install
 
 ### :jigsaw: Using the browser extension
 
-Previous [versions](https://github.com/patrickziegler/strava-heatmap-proxy/tree/v1) of this repository allowed to login and extract the necessary cookies automatically.
-Due to recent changes on Strava side this is not possible anymore and we need to extract the cookies in a different way.
-For this purpose, we have developed the browser extension `strava-cookie-exporter` which can be used to download a json file with the necessary cookies to feed the [proxy server](#using-the-proxy-server) with.
-
-You can download the extension for Firefox [here](strava-cookie-exporter.xpi) and install it manually in the Firefox add-on management.
+You can install the `strava-cookie-exporter` extension for Firefox from the Mozilla add-on store [here](https://addons.mozilla.org/de/firefox/addon/strava-cookie-exporter/)
 
 With this extension installed, you can
 - use your browser to login and navigate to the [Strava Global Heatmap](https://www.strava.com/maps/global-heatmap)
 - use the `strava-cookie-exporter` extension to export the relevant cookies as json file
+
+The exported json file is needed for running [strava-heatmap-proxy](#arrows_counterclockwise-using-the-proxy-server)
 
 ### :arrows_counterclockwise: Using the proxy server
 
