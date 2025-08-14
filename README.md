@@ -41,13 +41,15 @@ You can configure different target URLs or port numbers via `--target` or `--por
 By default, the necessary cookies are expected to be found in the file `${HOME}/.config/strava-heatmap-proxy/strava-cookies.json` (should be manually created with the `strava-cookie-exporter` extension).
 You can configure different locations of that file via `--cookies` as well.
 
+The CloudFront cookies have an expiration period of 24 hours, but you don't need to recreate the `strava-cookies.json` file all the time because `strava-heatmap-proxy` can automatically refresh expired cookies as long as the session is valid (the exact duration is unkown right now).
+
 To use this with your GIS software of choice, just define a simple [TMS](https://wiki.openstreetmap.org/wiki/TMS) layer like shown below that fetches high resolution heatmap tiles:
 
 ```xml
 <TMS>
   <Title>StravaGlobalHeatmap</Title>
-  <MinZoomLevel>3</MinZoomLevel>
-  <MaxZoomLevel>11</MaxZoomLevel>
+  <MinZoomLevel>5</MinZoomLevel>
+  <MaxZoomLevel>16</MaxZoomLevel>
   <Layer idx="0">
     <ServerUrl>http://localhost:8080/identified/globalheat/all/bluered/%1/%2/%3.png?v=19</ServerUrl>
   </Layer>
