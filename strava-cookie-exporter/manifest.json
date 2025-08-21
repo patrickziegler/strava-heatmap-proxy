@@ -11,6 +11,7 @@
     "https://*.strava.com/*"
   ],
   "background": {
+    "scripts": ["background.js"],
     "service_worker": "background.js"
   },
   "action": {
