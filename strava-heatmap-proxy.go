@@ -18,6 +18,7 @@ type Param struct {
 	CookiesFile *string
 	Port        *string
 	Target      *string
+	NoInit      *bool
 }
 
 func getParam() *Param {
@@ -31,6 +32,7 @@ func getParam() *Param {
 		CookiesFile: flag.String("cookies", cookiesfile, "Path to the cookies file"),
 		Port:        flag.String("port", "8080", "Local proxy port"),
 		Target:      flag.String("target", "https://content-a.strava.com/", "Heatmap provider URL"),
+		NoInit:      flag.Bool("no-init", false, "Don't try to refresh CloudFront cookies on startup"),
 	}
 	flag.Parse()
 	return param
@@ -168,7 +170,7 @@ func main() {
 		log.Fatalf("Could not initialize Strava client: %s", err)
 	}
 
-	if len(client.cloudFrontCookies) == 0 || time.Now().After(client.cloudFrontCookiesExpiration) {
+	if len(client.cloudFrontCookies) == 0 || (!*param.NoInit && time.Now().After(client.cloudFrontCookiesExpiration)) {
 		log.Printf("Fetching new CloudFront cookies...")
 		if err := client.fetchCloudFrontCookies(); err != nil {
 			log.Fatalf("Warning: Failed to fetch CloudFront cookies: %s", err)
