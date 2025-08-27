@@ -3,8 +3,8 @@
 This software allows streaming high resolution [Strava Global Heatmap](https://www.strava.com/maps/global-heatmap) tiles with clients like [QGIS](https://qgis.org/de/site/), [QMapShack](https://github.com/Maproom/qmapshack/wiki), [JOSM](https://josm.openstreetmap.de/) and many others without requiring them to be able to handle the Strava specific authentication and session management.
 
 To do so, you need the following two pieces:
-1. The [strava-cookie-exporter](#export-cookies-via-the-strava-cookie-exporter-browser-extension) browser extension to export the necessary cookies as json file
-1. The [strava-heatmap-proxy](#run-the-strava-heatmap-proxy-server-locally) server which adds the necessary cookies to your requests before redirecting them to Strava
+1. The [strava-cookie-exporter](#export-cookies) browser extension to export the necessary cookies as json file
+1. The [strava-heatmap-proxy](#run-the-proxy) server which adds the necessary cookies to your requests before redirecting them to Strava
 
 Note: [Previous versions](https://github.com/patrickziegler/strava-heatmap-proxy/tree/v1) of this repository were able to login to Strava automatically when running the proxy server.
 Due to recent changes on Strava side this is not possible anymore and we need to extract (at least) a valid session identifier via the browser extension.
@@ -20,19 +20,19 @@ cd strava-heatmap-proxy
 INSTALL_PREFIX=~/.local/bin make install
 ```
 
-## :rocket: Usage
+## :world_map: Usage
 
-### Export cookies via the `strava-cookie-exporter` browser extension
+### Export cookies
 
 The `strava-cookie-exporter` browser extension is available in the [Firefox add-on store](https://addons.mozilla.org/de/firefox/addon/strava-cookie-exporter/) and the [Chrome web store](https://chromewebstore.google.com/detail/strava-cookie-exporter/apkhbbckeaminpphaaaabpkhgimojlhk).
 
 With this extension installed, you can:
 - Use your browser to login and navigate to the [Strava Global Heatmap](https://www.strava.com/maps/global-heatmap)
-- Use the `strava-cookie-exporter` extension to export the relevant cookies as json file
+- Use the extension to export the relevant cookies as json file
 
-The exported json file is needed for running [strava-heatmap-proxy](#run-the-strava-heatmap-proxy-server-locally).
+The exported file is needed for running [strava-heatmap-proxy](#run-the-proxy).
 
-### Run the `strava-heatmap-proxy` server locally
+### Run the proxy
 
 Running the tool `strava-heatmap-proxy` from your terminal will set up a local proxy server for `https://content-a.strava.com/`.
 Every request to `http://localhost:8080/` will then be extended with session cookies before being forwarded to Strava.
@@ -41,7 +41,7 @@ You can configure different target URLs or port numbers via `--target` or `--por
 By default, the necessary cookies are expected to be found in the file `${HOME}/.config/strava-heatmap-proxy/strava-cookies.json` (should be manually created with the `strava-cookie-exporter` extension).
 You can configure different locations of that file via `--cookies` as well.
 
-The CloudFront cookies have an expiration period of 24 hours, but you don't need to recreate the `strava-cookies.json` file all the time because `strava-heatmap-proxy` can automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now).
+The CloudFront cookies have an expiration period of 24 hours, but you don't need to recreate the `strava-cookies.json` file all the time because `strava-heatmap-proxy` can automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now, but it seems to be several weeks at least).
 
 ### Configure your TMS client
 
