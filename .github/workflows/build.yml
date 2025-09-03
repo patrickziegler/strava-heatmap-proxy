@@ -2,7 +2,7 @@ name: Build & Push (Docker Hub)
 
 on:
   push:
-    branches: [ "master", "stable" ]
+    branches: [ "master", "stable", "main"]
     paths:
       - ".github/workflows/**"
       - "Dockerfile"
