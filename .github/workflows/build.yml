@@ -2,10 +2,11 @@ name: Build & Push (Docker Hub)
 
 on:
   push:
-    branches: [ "master", "stable", "main"]
+    branches: [ "main" ]
     paths:
       - ".github/workflows/**"
       - "Dockerfile"
+      - "strava-heatmap-proxy.go"
 
 jobs:
   docker:
