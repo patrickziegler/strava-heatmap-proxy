@@ -20,6 +20,20 @@ cd strava-heatmap-proxy
 INSTALL_PREFIX=~/.local/bin make install
 ```
 
+In case you don't have these tools available, the `Dockerfile` allows to build a containerized version of the proxy server as well:
+
+```sh
+docker build -t strava-heatmap-proxy .
+docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/config:ro strava-heatmap-proxy
+```
+
+Alternatively, you can download and execute a pre-built [container image](https://hub.docker.com/repository/docker/patrickziegler/strava-heatmap-proxy) with the following command:
+
+```sh
+docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/config:ro docker.io/patrickziegler/strava-heatmap-proxy:latest
+```
+
+
 ## :world_map: Usage
 
 ### Export cookies
