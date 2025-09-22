@@ -19,6 +19,7 @@ type Param struct {
 	Port        *string
 	Target      *string
 	NoInit      *bool
+	Verbose     *bool
 }
 
 func getParam() *Param {
@@ -33,6 +34,7 @@ func getParam() *Param {
 		Port:        flag.String("port", "8080", "Local proxy port"),
 		Target:      flag.String("target", "https://content-a.strava.com/", "Heatmap provider URL"),
 		NoInit:      flag.Bool("no-init", false, "Don't try to refresh CloudFront cookies on startup"),
+		Verbose:     flag.Bool("verbose", false, "Verbose logging"),
 	}
 	flag.Parse()
 	return param
@@ -192,11 +194,13 @@ func main() {
 		for _, c := range client.cloudFrontCookies {
 			req.AddCookie(c)
 		}
-		// log.Printf("Got request: %s", req.URL)
+		if *param.Verbose {
+			log.Printf("Got request: %s", req.URL)
+		}
 	}
 
 	proxy := httputil.ReverseProxy{Director: director}
 	http.Handle("/", &proxy)
-	log.Printf("Starting proxy for target %s on http://localhost:%s/ ..", *param.Target, *param.Port)
+	log.Printf("Started proxy for target %s on http://localhost:%s/ ..", *param.Target, *param.Port)
 	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))
 }
