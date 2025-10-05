@@ -161,6 +161,8 @@ func (c *StravaSessionClient) fetchCloudFrontCookies() error {
 }
 
 func main() {
+	log.Printf("Hello.")
+
 	param := getParam()
 	target, err := url.Parse(*param.Target)
 	if err != nil {
@@ -200,7 +202,24 @@ func main() {
 	}
 
 	proxy := httputil.ReverseProxy{Director: director}
-	http.Handle("/", &proxy)
+
+    // CORS wrapper
+	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests directly
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		proxy.ServeHTTP(w, r)
+	})
+
+    http.Handle("/", corsHandler)
+
 	log.Printf("Started proxy for target %s on http://localhost:%s/ ..", *param.Target, *param.Port)
 	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))
 }
