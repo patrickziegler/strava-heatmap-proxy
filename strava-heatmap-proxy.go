@@ -161,8 +161,6 @@ func (c *StravaSessionClient) fetchCloudFrontCookies() error {
 }
 
 func main() {
-	log.Printf("Hello.")
-
 	param := getParam()
 	target, err := url.Parse(*param.Target)
 	if err != nil {
