@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -15,11 +17,12 @@ import (
 )
 
 type Param struct {
-	CookiesFile *string
-	Port        *string
-	Target      *string
-	NoInit      *bool
-	Verbose     *bool
+	CookiesFile  *string
+	Port         *string
+	Target       *string
+	AllowOrigins *string
+	NoInit       *bool
+	Verbose      *bool
 }
 
 func getParam() *Param {
@@ -30,11 +33,12 @@ func getParam() *Param {
 		cookiesfile = path.Join(cookiesfile, ".config", "strava-heatmap-proxy", "strava-cookies.json")
 	}
 	param := &Param{
-		CookiesFile: flag.String("cookies", cookiesfile, "Path to the cookies file"),
-		Port:        flag.String("port", "8080", "Local proxy port"),
-		Target:      flag.String("target", "https://content-a.strava.com/", "Heatmap provider URL"),
-		NoInit:      flag.Bool("no-init", false, "Don't try to refresh CloudFront cookies on startup"),
-		Verbose:     flag.Bool("verbose", false, "Verbose logging"),
+		CookiesFile:  flag.String("cookies", cookiesfile, "Path to the cookies file"),
+		Port:         flag.String("port", "8080", "Local proxy port"),
+		Target:       flag.String("target", "https://content-a.strava.com/", "Heatmap provider URL"),
+		AllowOrigins: flag.String("allow-origins", "", "JSON array of allowed CORS origins, e.g. '[\"https://a\",\"https://b\"]'"),
+		NoInit:       flag.Bool("no-init", false, "Don't try to refresh CloudFront cookies on startup"),
+		Verbose:      flag.Bool("verbose", false, "Verbose logging"),
 	}
 	flag.Parse()
 	return param
@@ -114,6 +118,22 @@ func (c *StravaSessionClient) readCloudFrontCookiesFromFile(entries []cookieEntr
 	return nil
 }
 
+func parseAllowedOrigins(allowedOrigins string) (map[string]struct{}, error) {
+	var urls []string
+	if err := json.Unmarshal([]byte(allowedOrigins), &urls); err != nil {
+		return nil, fmt.Errorf("invalid JSON for cors-whitelist: %w", err)
+	}
+	// using a map of empty structs for quick membership checks in O(1)
+	m := make(map[string]struct{}, len(urls))
+	for _, u := range urls {
+		if u = string(u); u != "" {
+			// initialize an empty struct
+			m[u] = struct{}{}
+		}
+	}
+	return m, nil
+}
+
 func (c *StravaSessionClient) fetchCloudFrontCookies() error {
 	req, err := http.NewRequest("HEAD", "https://www.strava.com/maps", nil)
 	if err != nil {
@@ -179,6 +199,14 @@ func main() {
 		}
 	}
 
+	var allowedOrigins map[string]struct{}
+	if *param.AllowOrigins != "" {
+		allowedOrigins, err = parseAllowedOrigins(*param.AllowOrigins)
+		if err != nil {
+			log.Fatalf("Could not parse allowed origins: %v", err)
+		}
+	}
+
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
@@ -190,7 +218,6 @@ func main() {
 				log.Fatalf("Warning: Failed to fetch CloudFront cookies: %s", err)
 			}
 		}
-		// add CloudFront cookies to the request
 		for _, c := range client.cloudFrontCookies {
 			req.AddCookie(c)
 		}
@@ -199,24 +226,42 @@ func main() {
 		}
 	}
 
-	proxy := httputil.ReverseProxy{Director: director}
+	proxy := &httputil.ReverseProxy{
+		Director: director,
+		ModifyResponse: func(resp *http.Response) error {
+			origin := resp.Request.Header.Get("Origin")
+			if origin != "" {
+				if _, ok := allowedOrigins[origin]; ok {
+					resp.Header.Set("Access-Control-Allow-Origin", origin)
+				}
+			}
+			return nil
+		},
+		ErrorHandler: func(w http.ResponseWriter, req *http.Request, err error) {
+			if errors.Is(err, context.Canceled) {
+				if *param.Verbose {
+					log.Printf("Client canceled request: %s %s: %v", req.Method, req.URL, err)
+				}
+				return
+			}
+			log.Printf("Proxy error for %s %s: %v", req.Method, req.URL, err)
+			http.Error(w, err.Error(), http.StatusBadGateway)
+		},
+	}
 
-    // CORS wrapper
-	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		// Handle preflight requests directly
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		origin := req.Header.Get("Origin")
+		if origin != "" {
+			if _, ok := allowedOrigins[origin]; !ok {
+				if *param.Verbose {
+					log.Printf("Got request with non-whitelisted origin %s", origin)
+				}
+				http.Error(w, "Forbidden origin", http.StatusForbidden)
+				return
+			}
 		}
-
-		proxy.ServeHTTP(w, r)
+		proxy.ServeHTTP(w, req)
 	})
-
-    http.Handle("/", corsHandler)
 
 	log.Printf("Started proxy for target %s on http://localhost:%s/ ..", *param.Target, *param.Port)
 	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))

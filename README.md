@@ -50,10 +50,10 @@ The exported file is needed for running [strava-heatmap-proxy](#run-the-proxy).
 
 Running the tool `strava-heatmap-proxy` from your terminal will set up a local proxy server for `https://content-a.strava.com/`.
 Every request to `http://localhost:8080/` will then be extended with session cookies before being forwarded to Strava.
-You can configure different target URLs or port numbers via `--target` or `--port` as well.
+You can configure different target URLs or port numbers via the `--target` or `--port` options.
 
 By default, the necessary cookies are expected to be found in the file `${HOME}/.config/strava-heatmap-proxy/strava-cookies.json` (should be manually created with the `strava-cookie-exporter` extension).
-You can configure different locations of that file via `--cookies` as well.
+You can configure different locations of that file via the `--cookies` option.
 
 The CloudFront cookies have an expiration period of 24 hours, but you don't need to recreate the `strava-cookies.json` file all the time because `strava-heatmap-proxy` can automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now, but it seems to be several weeks at least).
 
@@ -72,7 +72,20 @@ To use this with your GIS software of choice, just define a simple [TMS](https:/
 </TMS>
 ```
 
-The `ServerUrl` can hold other elements than `all` and `bluered` in order to filter for certain activities or select different colorschemes, [this page](https://tjasz.github.io/heatmap/) lists some more options for that.
+The `ServerUrl` can hold other elements than `all` and `bluered`. If you want to filter for certain activities or select different colorschemes you may check [this page](https://tjasz.github.io/heatmap/) for how to set it up accordingly.
+
+### Advanced configuration for web clients
+
+Web clients like [gpx.studio](https://gpx.studio/) need to be whitelisted via the `--allow-origins` option.
+Otherwise the browser would reject the responses due to a violation of the [same-origin policy](https://en.wikipedia.org/wiki/Same-origin_policy).
+
+```sh
+strava-heatmap-proxy --allow-origins '["https://gpx.studio"]' --port 8080
+```
+
+With that in place, you can add the custom layer `http://localhost:8080/identified/globalheat/all/bluered/{z}/{x}/{y}.png?v=19` for accessing the heatmap.
+
+## Screenshot
 
 And this is how the result might look like in [QMapShack](https://github.com/Maproom/qmapshack/wiki):
 
