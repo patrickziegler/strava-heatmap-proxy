@@ -1,9 +1,14 @@
 [Unit]
 Description=Proxy server for accessing the Strava Global Heatmap
+StartLimitBurst=3
+StartLimitIntervalSec=30
 
 [Service]
 Environment="STRAVA_HEATMAP_PROXY_PORT=9192"
 ExecStart=%h/.local/bin/strava-heatmap-proxy --port ${STRAVA_HEATMAP_PROXY_PORT} --allow-origins '["https://gpx.studio"]' --no-init
+Restart=on-failure
+RestartSec=5
+
 
 [Install]
 WantedBy=default.target
