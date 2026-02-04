@@ -158,7 +158,9 @@ func (c *StravaSessionClient) fetchCloudFrontCookies() error {
 	for _, cookie := range resp.Cookies() {
 		switch cookie.Name {
 		case "CloudFront-Signature", "CloudFront-Policy", "CloudFront-Key-Pair-Id", "_strava_idcf":
-			cookies = append(cookies, cookie)
+			if cookie.Value != "" {
+				cookies = append(cookies, cookie)
+			}
 		case "_strava_CloudFront-Expires":
 			expiration, err = strconv.ParseInt(cookie.Value, 10, 64)
 			if err != nil {
