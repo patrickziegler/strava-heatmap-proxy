@@ -7,7 +7,7 @@ WORKDIR /src
 RUN CGO_ENABLED=0 go install github.com/patrickziegler/strava-heatmap-proxy@latest
 
 # --- Runtime stage ---
-FROM gcr.io/distroless/base-debian12:nonroot
+FROM gcr.io/distroless/base-debian13:nonroot
 WORKDIR /app
 COPY --from=build /go/bin/strava-heatmap-proxy ./
 EXPOSE 8080
