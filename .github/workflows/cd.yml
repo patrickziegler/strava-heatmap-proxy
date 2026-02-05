@@ -1,4 +1,4 @@
-name: Build & Push (Docker Hub)
+name: strava-heatmap-proxy-cd
 
 on:
   push:
@@ -6,13 +6,15 @@ on:
     paths:
       - ".github/workflows/**"
       - "Dockerfile"
+      - "go.mod"
+      - "go.sum"
       - "strava-heatmap-proxy.go"
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
+  cd:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: docker/setup-buildx-action@v3
 
