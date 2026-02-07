@@ -33,7 +33,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/strava-heatmap-proxy:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/strava-heatmap-proxy:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/strava-heatmap-proxy:buildcache
-          cache-to:   type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/strava-heatmap-proxy:buildcache,mode=max
-          provenance: false
-          sbom: false
