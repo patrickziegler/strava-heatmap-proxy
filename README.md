@@ -13,12 +13,12 @@ To do so, you need the following two pieces:
 
 ## :hammer_and_wrench: Build and Install
 
-With [git](https://git-scm.com/downloads), [golang](https://go.dev/) and [make](https://www.gnu.org/software/make/) available on your system, the following steps are sufficient to build and install `strava-heatmap-proxy` to the given path `INSTALL_PREFIX`:
+With [git](https://git-scm.com/downloads), [golang](https://go.dev/) available on your system, the following steps are sufficient to build and install `strava-heatmap-proxy`:
 
 ```sh
-git clone https://github.com/patrickziegler/strava-heatmap-proxy
-cd strava-heatmap-proxy
-INSTALL_PREFIX=~/.local/bin make install
+git clone https://github.com/patrickziegler/strava-heatmap-proxy && cd $_
+cd ./strava-heatmap-proxy
+GOPATH=$HOME/.local go install ./cmd/strava-heatmap-proxy
 ```
 
 In case you don't have these tools available, the `Dockerfile` allows to build a containerized version of the proxy server as well:

@@ -9,6 +9,5 @@ ExecStart=%h/.local/bin/strava-heatmap-proxy --port ${STRAVA_HEATMAP_PROXY_PORT}
 Restart=on-failure
 RestartSec=5
 
-
 [Install]
 WantedBy=default.target

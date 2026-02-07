@@ -10,21 +10,16 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "strava-heatmap-proxy/go.mod"
 
-      - name: Check gofmt
-        run: |
-          UNFORMATTED=$(gofmt -l .)
-          if [ -n "$UNFORMATTED" ]; then
-            echo -e "The following files are not properly formatted:\n${UNFORMATTED}"
-            exit 1
-          fi
+      - name: Check code format
+        run: make -C strava-heatmap-proxy formatcheck
 
       - uses: docker/setup-buildx-action@v3
 
       - name: Build image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: strava-heatmap-proxy/
           platforms: linux/amd64
           push: false
