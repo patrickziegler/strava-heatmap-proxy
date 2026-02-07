@@ -1,4 +1,4 @@
-name: strava-heatmap-proxy-cd
+name: deploy
 
 on:
   push:
