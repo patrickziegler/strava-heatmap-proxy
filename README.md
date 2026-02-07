@@ -6,9 +6,10 @@ To do so, you need the following two pieces:
 1. The [strava-cookie-exporter](#export-cookies) browser extension to export the necessary cookies as json file
 1. The [strava-heatmap-proxy](#run-the-proxy) server which adds the necessary cookies to your requests before redirecting them to Strava
 
-Note: [Previous versions](https://github.com/patrickziegler/strava-heatmap-proxy/tree/v1) of this repository were able to login to Strava automatically when running the proxy server.
-Due to recent changes on Strava side this is not possible anymore and we need to extract (at least) a valid session identifier via the browser extension.
-The proxy will then automatically refresh CloudFront tokens in case they have expired.
+> [!NOTE]
+> [Previous versions](https://github.com/patrickziegler/strava-heatmap-proxy/tree/v1) of this repository were able to login to Strava automatically when running the proxy server.
+> Due to recent changes on Strava side this is not possible anymore and we need to extract (at least) a valid session identifier via the browser extension.
+> The proxy will then automatically refresh CloudFront tokens in case they have expired.
 
 ## :hammer_and_wrench: Build and Install
 
@@ -24,15 +25,14 @@ In case you don't have these tools available, the `Dockerfile` allows to build a
 
 ```sh
 docker build -t strava-heatmap-proxy .
-docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/config:ro strava-heatmap-proxy
+docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/home/nonroot/.config/strava-heatmap-proxy:ro strava-heatmap-proxy
 ```
 
 Alternatively, you can download and execute a pre-built [container image](https://hub.docker.com/repository/docker/patrickziegler/strava-heatmap-proxy) with the following command:
 
 ```sh
-docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/config:ro docker.io/patrickziegler/strava-heatmap-proxy:latest
+docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/home/nonroot/.config/strava-heatmap-proxy:ro docker.io/patrickziegler/strava-heatmap-proxy:latest
 ```
-
 
 ## :world_map: Usage
 
@@ -67,7 +67,7 @@ To use this with your GIS software of choice, just define a simple [TMS](https:/
   <MinZoomLevel>5</MinZoomLevel>
   <MaxZoomLevel>16</MaxZoomLevel>
   <Layer idx="0">
-    <ServerUrl>http://localhost:8080/identified/globalheat/all/bluered/%1/%2/%3.png?v=19</ServerUrl>
+    <ServerUrl>http://localhost:8080/identified/globalheat/all/bluered/{z}/{x}/{y}.png?v=19</ServerUrl>
   </Layer>
 </TMS>
 ```
@@ -80,7 +80,7 @@ Web clients like [gpx.studio](https://gpx.studio/) need to be whitelisted via th
 Otherwise the browser would reject the responses due to a violation of the [same-origin policy](https://en.wikipedia.org/wiki/Same-origin_policy).
 
 ```sh
-strava-heatmap-proxy --allow-origins '["https://gpx.studio"]' --port 8080
+strava-heatmap-proxy --allow-origins '["https://gpx.studio"]'
 ```
 
 With that in place, you can add the custom layer `http://localhost:8080/identified/globalheat/all/bluered/{z}/{x}/{y}.png?v=19` for accessing the heatmap.
