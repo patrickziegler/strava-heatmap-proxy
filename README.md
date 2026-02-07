@@ -11,30 +11,7 @@ To do so, you need the following two pieces:
 > Due to recent changes on Strava side this is not possible anymore and we need to extract (at least) a valid session identifier via the browser extension.
 > The proxy will then automatically refresh CloudFront tokens in case they have expired.
 
-## :hammer_and_wrench: Build and Install
-
-With [git](https://git-scm.com/downloads), [golang](https://go.dev/) available on your system, the following steps are sufficient to build and install `strava-heatmap-proxy`:
-
-```sh
-git clone https://github.com/patrickziegler/strava-heatmap-proxy && cd $_
-cd ./strava-heatmap-proxy
-GOPATH=$HOME/.local go install ./cmd/strava-heatmap-proxy
-```
-
-In case you don't have these tools available, the `Dockerfile` allows to build a containerized version of the proxy server as well:
-
-```sh
-docker build -t strava-heatmap-proxy .
-docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/home/nonroot/.config/strava-heatmap-proxy:ro strava-heatmap-proxy
-```
-
-Alternatively, you can download and execute a pre-built [container image](https://hub.docker.com/repository/docker/patrickziegler/strava-heatmap-proxy) with the following command:
-
-```sh
-docker run --rm -p 8080:8080 -v ~/.config/strava-heatmap-proxy:/home/nonroot/.config/strava-heatmap-proxy:ro docker.io/patrickziegler/strava-heatmap-proxy:latest
-```
-
-## :world_map: Usage
+## Usage
 
 ### Export cookies
 
@@ -46,16 +23,21 @@ With this extension installed, you can:
 
 The exported file is needed for running [strava-heatmap-proxy](#run-the-proxy).
 
+Even though the exported cookies have an expiration period of 24 hours, you'll like only need to export them once because the proxy can automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now, but it seems to be several months at least).
+
 ### Run the proxy
 
-Running the tool `strava-heatmap-proxy` from your terminal will set up a local proxy server for `https://content-a.strava.com/`.
+You can use the [prebuilt Docker image](https://hub.docker.com/repository/docker/patrickziegler/strava-heatmap-proxy) for running a local instance of the proxy server in your terminal:
+
+```sh
+LOCAL_PORT=8080
+docker run --rm -p ${LOCAL_PORT}:8080 -v ${HOME}/.config/strava-heatmap-proxy:/home/nonroot/.config/strava-heatmap-proxy:ro docker.io/patrickziegler/strava-heatmap-proxy:latest
+```
+
+This will set up a local proxy server for `https://content-a.strava.com/`.
 Every request to `http://localhost:8080/` will then be extended with session cookies before being forwarded to Strava.
-You can configure different target URLs or port numbers via the `--target` or `--port` options.
 
-By default, the necessary cookies are expected to be found in the file `${HOME}/.config/strava-heatmap-proxy/strava-cookies.json` (should be manually created with the `strava-cookie-exporter` extension).
-You can configure different locations of that file via the `--cookies` option.
-
-The CloudFront cookies have an expiration period of 24 hours, but you don't need to recreate the `strava-cookies.json` file all the time because `strava-heatmap-proxy` can automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now, but it seems to be several weeks at least).
+By default, the necessary cookies are expected to be found in the file `${HOME}/.config/strava-heatmap-proxy/strava-cookies.json` (as created with the [strava-cookie-exporter](#export-cookies) extension).
 
 ### Configure your TMS client
 
@@ -76,20 +58,16 @@ The `ServerUrl` can hold other elements than `all` and `bluered`. If you want to
 
 ### Advanced configuration for web clients
 
-Web clients like [gpx.studio](https://gpx.studio/) need to be whitelisted via the `--allow-origins` option.
+Web clients like [gpx.studio](https://gpx.studio/) need to be whitelisted via the `--allow-origins '["https://gpx.studio"]'` option.
 Otherwise the browser would reject the responses due to a violation of the [same-origin policy](https://en.wikipedia.org/wiki/Same-origin_policy).
 
-```sh
-strava-heatmap-proxy --allow-origins '["https://gpx.studio"]'
-```
-
-With that in place, you can add the custom layer `http://localhost:8080/identified/globalheat/all/bluered/{z}/{x}/{y}.png?v=19` for accessing the heatmap.
+With the option in place, you can add the custom layer `http://localhost:8080/identified/globalheat/all/bluered/{z}/{x}/{y}.png?v=19` for accessing the heatmap.
 
 ## Screenshot
 
-And this is how the result might look like in [QMapShack](https://github.com/Maproom/qmapshack/wiki):
+This is how the result might look like in [QMapShack](https://github.com/Maproom/qmapshack/wiki):
 
-![screenshot of tms client](https://addons.mozilla.org/user-media/previews/full/327/327795.png)
+![screenshot of tms client](https://addons.mozilla.org/user-media/previews/full/351/351337.png)
 
 ## References
 
