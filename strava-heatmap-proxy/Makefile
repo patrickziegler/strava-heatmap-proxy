@@ -1,5 +1,6 @@
-SERVICE_NAME := strava-heatmap-proxy
-LOCAL_PORT := 9192
+SERVICE_NAME ?= strava-heatmap-proxy
+SERVICE_VERSION := $(shell cat version)
+LOCAL_PORT ?= 9192
 
 OUTPUT := \
 	$(SERVICE_NAME)
@@ -15,9 +16,9 @@ clean:
 	rm -f $(OUTPUT)
 
 install:
-	GOPATH=$(HOME)/.local go install ./cmd/$(SERVICE_NAME)
+	GOPATH=$(HOME)/.local go install -ldflags "-X main.version=${SERVICE_VERSION}" ./cmd/$(SERVICE_NAME)
 	mkdir -p $(HOME)/.config/systemd/user/
-	cp ./systemd/$(SERVICE_NAME).service $(HOME)/.config/systemd/user/
+	cp ./etc/systemd/$(SERVICE_NAME).service $(HOME)/.config/systemd/user/
 	systemctl --user daemon-reload
 	systemctl --user restart $(SERVICE_NAME)
 	systemctl --user enable $(SERVICE_NAME)
