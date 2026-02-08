@@ -4,7 +4,7 @@
 FROM golang:1.24 AS build
 COPY ./ /src
 WORKDIR /src
-RUN CGO_ENABLED=0 go install ./cmd/strava-heatmap-proxy
+RUN CGO_ENABLED=0 go install -ldflags "-X main.version=$(cat version)" ./cmd/strava-heatmap-proxy
 
 # --- Runtime stage ---
 FROM gcr.io/distroless/base-debian13:nonroot

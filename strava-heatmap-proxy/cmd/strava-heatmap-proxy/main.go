@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+var version = "dev"
+
 type Param struct {
 	CookiesFile  *string
 	Port         *string
@@ -23,6 +25,7 @@ type Param struct {
 	AllowOrigins *string
 	NoInit       *bool
 	Verbose      *bool
+	Version      *bool
 }
 
 func getParam() *Param {
@@ -39,6 +42,7 @@ func getParam() *Param {
 		AllowOrigins: flag.String("allow-origins", "", "JSON array of allowed CORS origins, e.g. '[\"https://a\",\"https://b\"]'"),
 		NoInit:       flag.Bool("no-init", false, "Don't try to refresh CloudFront cookies on startup"),
 		Verbose:      flag.Bool("verbose", false, "Verbose logging"),
+		Version:      flag.Bool("version", false, "Print version and exit"),
 	}
 	flag.Parse()
 	return param
@@ -184,6 +188,10 @@ func (c *StravaSessionClient) fetchCloudFrontCookies() error {
 
 func main() {
 	param := getParam()
+	if *param.Version {
+		fmt.Println("strava-heatmap-proxy", version)
+		return
+	}
 	target, err := url.Parse(*param.Target)
 	if err != nil {
 		log.Fatalf("Could not parse target url: %s", err)
@@ -265,6 +273,6 @@ func main() {
 		proxy.ServeHTTP(w, req)
 	})
 
-	log.Printf("Started proxy for target %s on http://localhost:%s/ ..", *param.Target, *param.Port)
+	log.Printf("Started proxy %s for target %s on http://localhost:%s/ ..", version, *param.Target, *param.Port)
 	log.Fatal(http.ListenAndServe(":"+*param.Port, nil))
 }

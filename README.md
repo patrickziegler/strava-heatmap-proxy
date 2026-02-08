@@ -6,11 +6,6 @@ To do so, you need the following two pieces:
 1. The [strava-cookie-exporter](#export-cookies) browser extension to export the necessary cookies as json file
 1. The [strava-heatmap-proxy](#run-the-proxy) server which adds the necessary cookies to your requests before redirecting them to Strava
 
-> [!NOTE]
-> [Previous versions](https://github.com/patrickziegler/strava-heatmap-proxy/tree/v1) of this repository were able to login to Strava automatically when running the proxy server.
-> Due to recent changes on Strava side this is not possible anymore and we need to extract (at least) a valid session identifier via the browser extension.
-> The proxy will then automatically refresh CloudFront tokens in case they have expired.
-
 ## Usage
 
 ### Export cookies
@@ -23,11 +18,12 @@ With this extension installed, you can:
 
 The exported file is needed for running [strava-heatmap-proxy](#run-the-proxy).
 
-Even though the exported cookies have an expiration period of 24 hours, you'll like only need to export them once because the proxy can automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now, but it seems to be several months at least).
+> [!NOTE]
+> The exported cookies have an expiration period of 24 hours, but you'll most likely need to export them only once as the proxy will automatically refresh expired cookies as long as the session is valid (the exact duration of that is unkown right now, but it seems to be several months at least).
 
 ### Run the proxy
 
-You can use the [prebuilt Docker image](https://hub.docker.com/repository/docker/patrickziegler/strava-heatmap-proxy) for running a local instance of the proxy server in your terminal:
+You can use the prebuilt [Docker image](https://hub.docker.com/repository/docker/patrickziegler/strava-heatmap-proxy) for running a local instance of the proxy server in your terminal:
 
 ```sh
 LOCAL_PORT=8080
