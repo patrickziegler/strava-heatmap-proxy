@@ -216,13 +216,13 @@ func main() {
 		}
 	}
 
-	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
+	rewrite := func(preq *httputil.ProxyRequest) {
+		preq.Out.URL.Scheme = target.Scheme
+		preq.Out.URL.Host = target.Host
 		if target.Path != "" {
-			req.URL.Path = path.Join(target.Path, req.URL.Path)
+			preq.Out.URL.Path = path.Join(target.Path, preq.In.URL.Path)
 		}
-		req.Host = target.Host
+		preq.Out.Host = target.Host
 		// refresh expired CloudFront cookies before forwarding the request
 		if client.cloudFrontCookiesExpiration.IsZero() || time.Now().After(client.cloudFrontCookiesExpiration) {
 			log.Printf("CloudFront cookies have expired, refreshing...")
@@ -231,15 +231,15 @@ func main() {
 			}
 		}
 		for _, c := range client.cloudFrontCookies {
-			req.AddCookie(c)
+			preq.Out.AddCookie(c)
 		}
 		if *param.Verbose {
-			log.Printf("Got request: %s", req.URL)
+			log.Printf("Got request: %s", preq.In.URL)
 		}
 	}
 
 	proxy := &httputil.ReverseProxy{
-		Director: director,
+		Rewrite: rewrite,
 		ModifyResponse: func(resp *http.Response) error {
 			origin := resp.Request.Header.Get("Origin")
 			if origin != "" {
