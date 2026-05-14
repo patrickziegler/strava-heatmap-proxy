@@ -94,17 +94,16 @@ func (c *StravaSessionClient) readCloudFrontCookiesFromFile(entries []cookieEntr
 	var expiration int64
 
 	for _, entry := range entries {
-		switch entry.Name {
-		case "CloudFront-Signature", "CloudFront-Policy", "CloudFront-Key-Pair-Id", "_strava_idcf":
-			cookies = append(cookies, &http.Cookie{
-				Name:  entry.Name,
-				Value: entry.Value,
-			})
-		case "_strava_CloudFront-Expires":
+		cookies = append(cookies, &http.Cookie{
+			Name:  entry.Name,
+			Value: entry.Value,
+		})
+
+		if entry.Name == "_strava_CloudFront-Expires" {
 			var err error
 			expiration, err = strconv.ParseInt(entry.Value, 10, 64)
 			if err != nil {
-				log.Printf("Invalid timestamp value for %s: %s", entry.Name, entry.Value)
+				log.Printf("Invalid timestamp: %s", entry.Value)
 			}
 		}
 	}
