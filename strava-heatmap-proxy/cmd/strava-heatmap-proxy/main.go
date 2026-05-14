@@ -219,6 +219,9 @@ func main() {
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
+		if target.Path != "" {
+			req.URL.Path = path.Join(target.Path, req.URL.Path)
+		}
 		req.Host = target.Host
 		// refresh expired CloudFront cookies before forwarding the request
 		if client.cloudFrontCookiesExpiration.IsZero() || time.Now().After(client.cloudFrontCookiesExpiration) {
