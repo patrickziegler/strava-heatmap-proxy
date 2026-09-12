@@ -176,6 +176,17 @@ func (c *StravaSessionClient) fetchCloudFrontCookies() error {
 		return fmt.Errorf("not all required CloudFront cookies received")
 	}
 
+	hasSession := false
+	for _, cookie := range cookies {
+		if cookie.Name == "_strava4_session" {
+			hasSession = true
+			break
+		}
+	}
+	if !hasSession {
+		cookies = append(cookies, &http.Cookie{Name: "_strava4_session", Value: c.sessionIdentifier})
+	}
+
 	c.cloudFrontCookies = cookies
 	if expiration != 0 {
 		c.cloudFrontCookiesExpiration = time.UnixMilli(expiration)
